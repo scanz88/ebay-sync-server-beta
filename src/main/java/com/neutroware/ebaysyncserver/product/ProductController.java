@@ -61,4 +61,9 @@ public class ProductController {
     public void bulkImport(Authentication currentUser) throws Exception {
         importer.bulkImportFromEbayToShopify(currentUser.getName());
     }
+
+    @GetMapping("/test")
+    public String test() throws Exception {
+       return "it works";
+    }
 }

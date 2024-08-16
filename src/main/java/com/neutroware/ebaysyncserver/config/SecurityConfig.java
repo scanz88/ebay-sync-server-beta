@@ -22,7 +22,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 // RequestMatchers must NOT INCLUDE the context-path (set in application.yml as /api/v1)
-                .authorizeHttpRequests(authorize -> authorize.requestMatchers("/ebay/notification", "/shopify/webhook")
+                .authorizeHttpRequests(authorize -> authorize.requestMatchers("/ebay/notification", "/shopify/webhook", "/product/test")
                         .permitAll().anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
