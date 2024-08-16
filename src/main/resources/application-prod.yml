@@ -1,0 +1,8 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://keycloak-production-9908.up.railway.app/realms/ebay-sync-prod
+server:
+  port : 8081

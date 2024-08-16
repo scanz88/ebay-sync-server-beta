@@ -1,0 +1,39 @@
+# Environment variables are specified by ${}. To set in intellij, go to run -> edit configurations.
+# Can also store these in a .env file (which should probably be specified in .gitignore)
+
+server:
+  servlet:
+    context-path: /api/v1/
+spring:
+  application:
+    name: ebaysyncserver
+  datasource:
+    password: ${DB_PASSWORD}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+      show-sql: true
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 50MB
+springdoc:
+  default-produces-media-type: application/json
+logging:
+  level:
+    org:
+      springframework:
+        security: INFO
+encryption:
+  password: ${ENCRYPT_PASSWORD}
+  salt: ${ENCRYPT_SALT}
+api.ebay.com:
+  appid: ${EBAY_APP_ID}
+  certid: ${EBAY_CERT_ID}
+  devid: ${EBAY_DEV_ID}
+  redirecturi: ${EBAY_REDIRECT_URI}
+
