@@ -63,7 +63,7 @@ public class ProductController {
     }
 
     @GetMapping("/test")
-    public String test() throws Exception {
-       return "it works";
+    public Product test() throws Exception {
+       return productRepository.findById(1L).get();
     }
 }
