@@ -150,7 +150,7 @@ public class Importer {
                 ActivityFlow.EBAY_TO_SHOPIFY,
                 ActivityStatus.SUCCESS,
                 userId,
-                "Imported " + successfullyImportedCount + " products from ebay to shopify"
+                "Imported " + successfullyImportedCount + " products"
         );
 
         System.out.println("Import complete!" + " " + successfullyImportedCount + " products were imported successfully." + " "
@@ -176,7 +176,7 @@ public class Importer {
                 ActivityFlow.EBAY_TO_SHOPIFY,
                 ActivityStatus.SUCCESS,
                 userId,
-                "Imported " + successfullyImportedCount + " products from ebay to shopify"
+                "Imported " + successfullyImportedCount + " products"
         );
 
         System.out.println("Import complete!" + " " + successfullyImportedCount + " products were imported successfully." + " "

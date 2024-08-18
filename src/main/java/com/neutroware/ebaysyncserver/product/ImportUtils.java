@@ -23,6 +23,7 @@ import com.neutroware.ebaysyncserver.shopify.api.mutation.publishablePublish.Pub
 import com.neutroware.ebaysyncserver.shopify.api.query.products.Products;
 import com.neutroware.ebaysyncserver.shopify.api.query.products.ProductsResponse;
 import com.neutroware.ebaysyncserver.shopify.api.query.publications.Publications;
+import com.neutroware.ebaysyncserver.syncsettings.SyncSettings;
 import com.neutroware.ebaysyncserver.syncsettings.SyncSettingsRepository;
 import com.neutroware.ebaysyncserver.userinfo.UserInfoRepository;
 import jakarta.persistence.EntityManager;
@@ -241,16 +242,17 @@ public class ImportUtils {
 
         ProductVariantUpdateArgs.InventoryItem inventoryItem = buildInventoryItem(ebayItem);
         Float ebayPrice = ebayItem.sellingStatus().currentPrice().value();
+        Float shopifyPrice = adjustPrice(userId, ebayPrice);
         ProductVariantUpdateArgs productVariantUpdateArgs = new ProductVariantUpdateArgs(
                 new ProductVariantUpdateArgs.ProductVariantInput(
                         variantId,
-                        ebayPrice.toString(),
+                        shopifyPrice.toString(),
                         inventoryItem
                 )
         );
         var productVariantUpdateResult = productVariantUpdate.updateVariant(storeName, shopifyToken, productVariantUpdateArgs);
         product.setEbayPrice(ebayPrice);
-        product.setShopifyPrice(ebayPrice);
+        product.setShopifyPrice(shopifyPrice);
         product.setWeight(inventoryItem.measurement().weight().value());
         product.setWeightUnit(inventoryItem.measurement().weight().unit());
         product = productRepository.save(product);
@@ -325,16 +327,17 @@ public class ImportUtils {
 
         ProductVariantUpdateArgs.InventoryItem inventoryItem = buildInventoryItem(ebayItem);
         Float ebayPrice = ebayItem.sellingStatus().currentPrice().value();
+        Float shopifyPrice = adjustPrice(userId, ebayPrice);
         ProductVariantUpdateArgs productVariantUpdateArgs = new ProductVariantUpdateArgs(
                 new ProductVariantUpdateArgs.ProductVariantInput(
                         variantId,
-                        ebayPrice.toString(),
+                        shopifyPrice.toString(),
                         inventoryItem
                 )
         );
         var productVariantUpdateResult = productVariantUpdate.updateVariant(storeName, shopifyToken, productVariantUpdateArgs);
         product.setEbayPrice(ebayPrice);
-        product.setShopifyPrice(ebayPrice);
+        product.setShopifyPrice(shopifyPrice);
         product.setWeight(inventoryItem.measurement().weight().value());
         product.setWeightUnit(inventoryItem.measurement().weight().unit());
         product = productRepository.save(product);
@@ -409,16 +412,17 @@ public class ImportUtils {
 
         ProductVariantUpdateArgs.InventoryItem inventoryItem = buildInventoryItem(ebayItem);
         Float ebayPrice = ebayItem.sellingStatus().currentPrice().value();
+        Float shopifyPrice = adjustPrice(userId, ebayPrice);
         ProductVariantUpdateArgs productVariantUpdateArgs = new ProductVariantUpdateArgs(
                 new ProductVariantUpdateArgs.ProductVariantInput(
                         variantId,
-                        ebayPrice.toString(),
+                        shopifyPrice.toString(),
                         inventoryItem
                 )
         );
         var productVariantUpdateResult = productVariantUpdate.updateVariant(storeName, shopifyToken, productVariantUpdateArgs);
         product.setEbayPrice(ebayPrice);
-        product.setShopifyPrice(ebayPrice);
+        product.setShopifyPrice(shopifyPrice);
         product.setWeight(inventoryItem.measurement().weight().value());
         product.setWeightUnit(inventoryItem.measurement().weight().unit());
         product = productRepository.save(product);
@@ -472,6 +476,20 @@ public class ImportUtils {
         product.setTitle(ebayItem.title());
         product.setSynced(false);
         return productRepository.save(product);
+    }
+
+    private Float adjustPrice(String userId, Float price) {
+        Float adjustedPrice = price;
+        SyncSettings syncSettings = syncSettingsRepository.findByUserId(userId).get();
+        //TODO: Make sure in frontend that either only markdown or markup can be applied but not both
+        // or do a combined calculation
+        if (syncSettings.getApplyMarkup()) {
+            adjustedPrice = price * (1 + (syncSettings.getMarkupPercent()/100));
+        }
+        if (syncSettings.getApplyMarkdown()) {
+            adjustedPrice = price * (1 - (syncSettings.getMarkdownPercent()/100));
+        }
+        return adjustedPrice;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
