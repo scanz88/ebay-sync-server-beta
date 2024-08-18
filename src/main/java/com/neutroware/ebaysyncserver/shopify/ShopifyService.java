@@ -39,7 +39,7 @@ public class ShopifyService {
     private final GetItem getItem;
     private final ReviseInventoryStatus reviseInventoryStatus;
     private final EndItem endItem;
-    private ActivityService activityService;
+    private final ActivityService activityService;
 
     public String getToken(String userId) {
         UserInfo userInfo = userInfoRepository.findById(userId).get();
