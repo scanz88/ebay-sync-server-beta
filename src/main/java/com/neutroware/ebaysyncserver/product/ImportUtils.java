@@ -276,13 +276,15 @@ public class ImportUtils {
         product.setShopifyQuantity(ebayQuantity);
         product = productRepository.save(product);
 
+        List<PublishablePublishArgs.PublicationInput> publicationList =
+                publications.getAllPublications(storeName, shopifyToken)
+                        .stream()
+                        .map(publication -> new PublishablePublishArgs.PublicationInput(publication.id()))
+                        .toList();
+
         PublishablePublishArgs publishablePublishArgs = new PublishablePublishArgs(
                 productId,
-                new ArrayList<>(List.of(
-                        new PublishablePublishArgs.PublicationInput(
-                                "gid://shopify/Publication/112832184631"
-                        )
-                ))
+               publicationList
         );
         var publishResult = publishablePublish.publishResource(storeName, shopifyToken, publishablePublishArgs);
         product.setSynced(true);
@@ -361,13 +363,15 @@ public class ImportUtils {
         product.setShopifyQuantity(ebayQuantity);
         product = productRepository.save(product);
 
+        List<PublishablePublishArgs.PublicationInput> publicationList =
+                publications.getAllPublications(storeName, shopifyToken)
+                        .stream()
+                        .map(publication -> new PublishablePublishArgs.PublicationInput(publication.id()))
+                        .toList();
+
         PublishablePublishArgs publishablePublishArgs = new PublishablePublishArgs(
                 productId,
-                new ArrayList<>(List.of(
-                        new PublishablePublishArgs.PublicationInput(
-                                "gid://shopify/Publication/112832184631"
-                        )
-                ))
+                publicationList
         );
         var publishResult = publishablePublish.publishResource(storeName, shopifyToken, publishablePublishArgs);
         product.setSynced(true);
@@ -446,13 +450,15 @@ public class ImportUtils {
         product.setShopifyQuantity(ebayQuantity);
         product = productRepository.save(product);
 
+        List<PublishablePublishArgs.PublicationInput> publicationList =
+                publications.getAllPublications(storeName, shopifyToken)
+                        .stream()
+                        .map(publication -> new PublishablePublishArgs.PublicationInput(publication.id()))
+                        .toList();
+
         PublishablePublishArgs publishablePublishArgs = new PublishablePublishArgs(
                 productId,
-                new ArrayList<>(List.of(
-                        new PublishablePublishArgs.PublicationInput(
-                                "gid://shopify/Publication/112832184631"
-                        )
-                ))
+                publicationList
         );
         var publishResult = publishablePublish.publishResource(storeName, shopifyToken, publishablePublishArgs);
         product.setSynced(true);
