@@ -100,9 +100,10 @@ public class ShopifyService {
         }
 
         String[] parts = shopDomain.split("\\.");
-        if (parts.length < 3) {
-            throw new IllegalArgumentException("Invalid Shopify shop domain format");
-        }
+        System.out.println("extracted store name: " + parts[0]);
+//        if (parts.length < 3) {
+//            throw new IllegalArgumentException("Invalid Shopify shop domain format");
+//        }
 
         return parts[0];
     }
