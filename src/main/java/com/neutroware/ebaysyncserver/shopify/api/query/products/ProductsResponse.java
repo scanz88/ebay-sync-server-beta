@@ -1,5 +1,6 @@
 package com.neutroware.ebaysyncserver.shopify.api.query.products;
 
+import com.neutroware.ebaysyncserver.shopify.api.util.type.Connection;
 import com.neutroware.ebaysyncserver.shopify.api.util.type.Edge;
 
 import java.util.List;
@@ -12,8 +13,8 @@ public record ProductsResponse(
             String id,
             String title,
             Integer totalInventory,
-            List<String> tags
-
+            List<String> tags,
+            Connection<Media> media
     ) {}
 
     public record PageInfo(
@@ -21,6 +22,10 @@ public record ProductsResponse(
             Boolean hasNextPage,
             String startCursor,
             String endCursor
+    ) {}
+
+    public record Media(
+            String id
     ) {}
 }
 

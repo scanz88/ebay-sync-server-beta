@@ -166,7 +166,7 @@ public class EbayScheduledTasks {
                         ActivityFlow.EBAY_TO_SHOPIFY,
                         ActivityStatus.SUCCESS,
                         userInfo.getUserId(),
-                        "Sold " + quantityPurchased + " of product " + "'" + product.getTitle()
+                        "Sold " + quantityPurchased + " of product " + product.getTitle()
                 );
             }
         }

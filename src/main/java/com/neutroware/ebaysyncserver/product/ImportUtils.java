@@ -14,6 +14,8 @@ import com.neutroware.ebaysyncserver.shopify.api.mutation.inventoryadjustquantit
 import com.neutroware.ebaysyncserver.shopify.api.mutation.inventoryadjustquantities.InventoryAdjustQuantitiesArgs;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productcreate.ProductCreate;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productcreate.ProductCreateArgs;
+import com.neutroware.ebaysyncserver.shopify.api.mutation.productdeletemedia.ProductDeleteMedia;
+import com.neutroware.ebaysyncserver.shopify.api.mutation.productdeletemedia.ProductDeleteMediaArgs;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productupdate.ProductUpdate;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productupdate.ProductUpdateArgs;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productvariantupdate.ProductVariantUpdate;
@@ -55,6 +57,7 @@ public class ImportUtils {
     private final LongJobRespository longJobRespository;
     private final EntityManager entityManager;
     private final SyncSettingsRepository syncSettingsRepository;
+    private final ProductDeleteMedia productDeleteMedia;
 
     public static Set<String> rootCategories = new HashSet<>();
     public static final List<String> CUSTOM_DECADE_TAGS = Collections.unmodifiableList(
@@ -116,7 +119,10 @@ public class ImportUtils {
     public List<ProductCreateArgs.Media> buildMediaList(GetItemResponse.Item item) {
         List<ProductCreateArgs.Media> list = new ArrayList<>();
         item.pictureDetails().pictureURL().forEach(p -> {
-            list.add(new ProductCreateArgs.Media("alt", "IMAGE", p));
+            String highResUrl = getHighResEbayPictureUrl(p);
+            System.out.println(" original pic url " + p);
+            System.out.println(" high res pic url " + highResUrl);
+            list.add(new ProductCreateArgs.Media("alt", "IMAGE", highResUrl));
         });
         return list;
     }
@@ -289,6 +295,7 @@ public class ImportUtils {
         var publishResult = publishablePublish.publishResource(storeName, shopifyToken, publishablePublishArgs);
         product.setSynced(true);
         productRepository.save(product);
+        System.out.println("Added " + ebayItem.title());
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -376,6 +383,7 @@ public class ImportUtils {
         var publishResult = publishablePublish.publishResource(storeName, shopifyToken, publishablePublishArgs);
         product.setSynced(true);
         productRepository.save(product);
+        System.out.println("Added " + ebayItem.title() + " as potential duplicate");
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -391,6 +399,18 @@ public class ImportUtils {
         Product product = initializeProduct(ebayItem, userId);
         GetItemResponse.Item itemWithSpecifics = fetchEbayItemWithSpecifics(ebayItem, ebayToken);
 
+        List<String> mediaIdsToDelete = shopifyProduct.media().edges().stream()
+                .map(edge -> edge.node().id())
+                .toList();
+        ProductDeleteMediaArgs productDeleteMediaArgs =
+                new ProductDeleteMediaArgs(mediaIdsToDelete, shopifyProduct.id());
+        var productDeleteMediaResult = productDeleteMedia.deleteMedia(
+                storeName,
+                shopifyToken,
+                productDeleteMediaArgs
+        );
+
+        var media = buildMediaList(ebayItem);
         List<String> tags = buildTags(
                 itemWithSpecifics != null ?
                         itemWithSpecifics : ebayItem
@@ -400,7 +420,8 @@ public class ImportUtils {
                 new ProductUpdateArgs.ProductInput(
                         shopifyProduct.id(),
                         tags
-                )
+                ),
+                media
         );
         var productUpdateResult = productUpdate.updateProduct(storeName, shopifyToken, productUpdateArgsArgs);
 
@@ -463,6 +484,7 @@ public class ImportUtils {
         var publishResult = publishablePublish.publishResource(storeName, shopifyToken, publishablePublishArgs);
         product.setSynced(true);
         productRepository.save(product);
+        System.out.println("Updated " + ebayItem.title());
     }
 
     //TODO: add refresh token call here since long running process
@@ -496,6 +518,11 @@ public class ImportUtils {
             adjustedPrice = price * (1 - (syncSettings.getMarkdownPercent()/100));
         }
         return adjustedPrice;
+    }
+
+    private String getHighResEbayPictureUrl(String url) {
+        //$_57 seems to return 1600x1600 images
+        return url.replaceAll("\\$_\\d+\\.JPG", "\\$_57.JPG").replaceAll("\\?.*$", "");
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

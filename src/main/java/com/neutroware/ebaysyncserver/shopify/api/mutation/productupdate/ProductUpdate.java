@@ -20,8 +20,8 @@ public class ProductUpdate {
 
         //language=GraphQl
         String mutation = """
-            mutation ($input: ProductInput!) {
-                productUpdate(input: $input) {
+            mutation ($input: ProductInput!, $media: [CreateMediaInput!]) {
+                productUpdate(input: $input, media: $media) {
                      product {
                           id
                           title
@@ -56,6 +56,7 @@ public class ProductUpdate {
             """;
         Mono<ProductUpdateResponse> monoResponse = client.document(mutation)
                 .variable("input", args.input())
+                .variable("media", args.media())
                 .execute()
                 .map((gqlResponse) -> {
                     if (!gqlResponse.isValid()) {

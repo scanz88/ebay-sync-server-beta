@@ -139,7 +139,7 @@ public class Importer {
                 .filter(itemArray -> itemArray != null)
                 .map(GetSellerListResponse.ItemArray::items)
                 .flatMap(List::stream)
-               // .limit(10) //TODO: remove limit (only for testing)
+               //.limit(10) //TODO: remove limit (only for testing)
                 .collect(Collectors.toList());
         List<ProductsResponse.Product> allShopifyProds = products.getAllProducts(storeName, shopifyToken);
         DeduplicationResult dedupResult = importUtils.deduplicate(allEbayProds, allShopifyProds);

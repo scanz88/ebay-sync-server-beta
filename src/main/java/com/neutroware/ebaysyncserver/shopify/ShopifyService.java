@@ -88,7 +88,7 @@ public class ShopifyService {
                     ActivityFlow.SHOPIFY_TO_EBAY,
                     ActivityStatus.SUCCESS,
                     userInfo.getUserId(),
-                    "Sold " + lineItem.quantity() + " of product " + "'" + product.getTitle()
+                    "Sold " + lineItem.quantity() + " of product " + product.getTitle()
             );
         }
         System.out.println("finished processing order");

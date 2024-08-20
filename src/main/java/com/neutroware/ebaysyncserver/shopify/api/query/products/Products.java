@@ -34,6 +34,13 @@ public class Products {
                                 title
                                 totalInventory
                                 tags
+                                 media(first: 50) {
+                                      edges {
+                                        node {
+                                          id
+                                      }
+                                    }
+                                  }
                             }
                             cursor
                         }
