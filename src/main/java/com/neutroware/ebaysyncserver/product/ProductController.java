@@ -3,6 +3,7 @@ package com.neutroware.ebaysyncserver.product;
 import com.neutroware.ebaysyncserver.ebay.EbayService;
 import com.neutroware.ebaysyncserver.ebay.api.getitem.GetItem;
 import com.neutroware.ebaysyncserver.ebay.api.getsellerlist.GetSellerList;
+import com.neutroware.ebaysyncserver.encryption.EncryptionService;
 import com.neutroware.ebaysyncserver.longjob.LongJob;
 import com.neutroware.ebaysyncserver.longjob.LongJobRespository;
 import com.neutroware.ebaysyncserver.longjob.LongJobStatus;
@@ -38,6 +39,7 @@ public class ProductController {
     private final ImportUtils importUtils;
     private final LongJobRespository longJobRespository;
     private final ProductService productService;
+    private final EncryptionService encryptionService;
 
 
     @GetMapping
@@ -63,7 +65,7 @@ public class ProductController {
     }
 
     @GetMapping("/test")
-    public Product test() throws Exception {
-       return productRepository.findById(1L).get();
+    public void test() throws Exception {
+
     }
 }

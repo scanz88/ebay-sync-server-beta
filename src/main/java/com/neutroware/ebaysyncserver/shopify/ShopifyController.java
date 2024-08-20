@@ -48,6 +48,10 @@ public class ShopifyController {
             HttpServletRequest request
     ) throws Exception
     {
+        System.out.println("shopify webhook recieved");
+        System.out.println("domain: " + domain);
+
+        //TODO: getting IO exception sometimes which is probably related to BufferedReader (maybe need to close it)
         String rawBody = new BufferedReader(request.getReader()).lines().collect(Collectors.joining("\n"));
         System.out.println("order body");
         System.out.println(rawBody);
