@@ -5,6 +5,8 @@ server:
   servlet:
     context-path: /api/v1/
 spring:
+  codec:
+    max-in-memory-size: 10MB
   application:
     name: ebaysyncserver
   datasource:
