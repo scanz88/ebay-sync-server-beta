@@ -115,6 +115,105 @@ public class Importer {
         System.out.println(failedItemsReport.toString());
     }
 
+    @Transactional
+    @Async("singleThreadExecutor")
+    public void findDuplicateShopifyProducts(String userId) {
+        UserInfo userInfo = userInfoRepository.findById(userId).orElseThrow();
+        String shopifyToken = shopifyService.getToken(userId);
+        String storeName = shopifyService.getStoreName(userId);
+        List<ProductsResponse.Product> allShopifyProds = products.getAllProducts(storeName, shopifyToken);
+
+        Map<String, Long> titleCounts = allShopifyProds.stream()
+                .collect(Collectors.groupingBy(
+                        ProductsResponse.Product::title,
+                        Collectors.counting()
+                ));
+        List<String> duplicateTitles = titleCounts.entrySet().stream()
+                .filter(entry -> entry.getValue() > 1)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        List<ProductsResponse.Product> duplicateProducts = allShopifyProds.stream()
+                .filter(product -> duplicateTitles.contains(product.title()))
+                .collect(Collectors.toList());
+
+        duplicateProducts.forEach(product ->
+                System.out.println("Duplicate Product: " + product.title())
+        );
+    }
+
+    @Transactional
+    @Async("singleThreadExecutor")
+    public void restoreFailedMedia(String userId) throws Exception {
+        UserInfo userInfo = userInfoRepository.findById(userId).orElseThrow();
+        String ebayToken = ebayService.refreshTokenIfExpired(userId);
+        String shopifyToken = shopifyService.getToken(userId);
+        String storeName = shopifyService.getStoreName(userId);
+
+        List<GetItemResponse.Item> allEbayProds = getSellerList.getAllActiveListings(ebayToken).stream()
+                .map(GetSellerListResponse::itemArray)
+                .filter(itemArray -> itemArray != null)
+                .map(GetSellerListResponse.ItemArray::items)
+                .flatMap(List::stream)
+                //.limit(10) //TODO: remove limit (only for testing)
+                .collect(Collectors.toList());
+        List<ProductsResponse.Product> allShopifyProds = products.getAllProducts(storeName, shopifyToken);
+        DeduplicationResult dedupResult = importUtils.deduplicate(allEbayProds, allShopifyProds);
+
+        var result = new HashMap<String,Integer>();
+
+        for (Map.Entry<GetItemResponse.Item, ProductsResponse.Product> entry : dedupResult.identical().entrySet()) {
+            GetItemResponse.Item ebayItem = entry.getKey();
+            ProductsResponse.Product shopifyProduct = entry.getValue();
+
+            int ebayImageCount = ebayItem.pictureDetails().pictureURL().size();
+            int shopifyImageCount = shopifyProduct.media().edges().size();
+
+            int diff = ebayImageCount - shopifyImageCount;
+
+            if (diff != 0) {
+                result.put(ebayItem.title(), diff);
+            }
+
+        }
+        result.forEach((k, v) -> {
+            System.out.println(k + " : " + v);
+        });
+        System.out.println("Number of products with media failures: " + result.size());
+
+    }
+
+    @Transactional
+    @Async("singleThreadExecutor")
+    public void auxBulkImportFromEbayToShopify(String userId) throws Exception {
+        UserInfo userInfo = userInfoRepository.findById(userId).orElseThrow();
+        String ebayToken = ebayService.refreshTokenIfExpired(userId);
+        String shopifyToken = shopifyService.getToken(userId);
+        String storeName = shopifyService.getStoreName(userId);
+
+        List<GetItemResponse.Item> allEbayProds = getSellerList.getAllActiveListings(ebayToken).stream()
+                .map(GetSellerListResponse::itemArray)
+                .filter(itemArray -> itemArray != null)
+                .map(GetSellerListResponse.ItemArray::items)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        List<ProductsResponse.Product> allShopifyProds = products.getAllProducts(storeName, shopifyToken);
+        DeduplicationResult dedupResult = importUtils.deduplicate(allEbayProds, allShopifyProds);
+
+        System.out.println("potential dup: " + dedupResult.editDistUnder30().stream().map(GetItemResponse.Item::title).toList());
+        System.out.println("new:  " + dedupResult.editDistOver30().stream().map(GetItemResponse.Item::title).toList());
+
+        for (GetItemResponse.Item ebayItem : dedupResult.editDistOver30()) {
+            try {
+                if (Thread.currentThread().isInterrupted()) break;
+                importUtils.addNewShopifyProduct(ebayItem, ebayToken, storeName, shopifyToken, userId);
+            } catch (Exception e) {
+                System.out.println("Import failed (adding new shopify product) on ebay item id" + ebayItem.itemId());
+                System.out.println(e.getMessage());
+            }
+        }
+    }
 
     //TODO: when making this call from UI (using @Async), the UI will poll DB
     // to check if finished. Make sure to also make it granular (like adding
