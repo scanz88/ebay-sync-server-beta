@@ -66,8 +66,6 @@ public class ProductController {
 
     @GetMapping("/test")
     public void test() throws Exception {
-    //importer.restoreFailedMedia("7a0b4d46-0209-4c4a-9e82-84c151b3a675");
-        //importer.findDuplicateShopifyProducts("7a0b4d46-0209-4c4a-9e82-84c151b3a675");
-        importer.auxBulkImportFromEbayToShopify("52a04c17-9567-4f08-83f5-680ea57e1a94");
+
     }
 }
