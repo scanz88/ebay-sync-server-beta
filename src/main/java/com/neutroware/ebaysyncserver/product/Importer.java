@@ -17,6 +17,8 @@ import com.neutroware.ebaysyncserver.shopify.api.mutation.inventoryadjustquantit
 import com.neutroware.ebaysyncserver.shopify.api.mutation.inventoryadjustquantities.InventoryAdjustQuantitiesArgs;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productcreate.ProductCreate;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productcreate.ProductCreateArgs;
+import com.neutroware.ebaysyncserver.shopify.api.mutation.productdeletemedia.ProductDeleteMedia;
+import com.neutroware.ebaysyncserver.shopify.api.mutation.productdeletemedia.ProductDeleteMediaArgs;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productupdate.ProductUpdate;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productupdate.ProductUpdateArgs;
 import com.neutroware.ebaysyncserver.shopify.api.mutation.productvariantupdate.ProductVariantUpdate;
@@ -38,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +64,7 @@ public class Importer {
     private final ActivityService activityService;
     private final Map<String, String> failedItemsReport = new HashMap<>();
     private int successfullyImportedCount = 0;
+    private final ProductDeleteMedia productDeleteMedia;
 
     public void retryFailedImport(String userId) throws Exception {
         UserInfo userInfo = userInfoRepository.findById(userId).orElseThrow();
@@ -155,12 +159,12 @@ public class Importer {
                 .filter(itemArray -> itemArray != null)
                 .map(GetSellerListResponse.ItemArray::items)
                 .flatMap(List::stream)
-                //.limit(10) //TODO: remove limit (only for testing)
                 .collect(Collectors.toList());
         List<ProductsResponse.Product> allShopifyProds = products.getAllProducts(storeName, shopifyToken);
         DeduplicationResult dedupResult = importUtils.deduplicate(allEbayProds, allShopifyProds);
 
         var result = new HashMap<String,Integer>();
+        int count =0;
 
         for (Map.Entry<GetItemResponse.Item, ProductsResponse.Product> entry : dedupResult.identical().entrySet()) {
             GetItemResponse.Item ebayItem = entry.getKey();
@@ -172,15 +176,32 @@ public class Importer {
             int diff = ebayImageCount - shopifyImageCount;
 
             if (diff != 0) {
-                result.put(ebayItem.title(), diff);
+                List<String> mediaIdsToDelete = shopifyProduct.media().edges().stream()
+                        .map(edge -> edge.node().id())
+                        .toList();
+                ProductDeleteMediaArgs productDeleteMediaArgs =
+                        new ProductDeleteMediaArgs(mediaIdsToDelete, shopifyProduct.id());
+                var productDeleteMediaResult = productDeleteMedia.deleteMedia(
+                        storeName,
+                        shopifyToken,
+                        productDeleteMediaArgs
+                );
+                Thread.sleep(1000);
+                var media = importUtils.buildMediaList(ebayItem);
+                ProductUpdateArgs productUpdateArgsArgs = new ProductUpdateArgs(
+                        new ProductUpdateArgs.ProductInput(
+                                shopifyProduct.id(),
+                                shopifyProduct.tags()
+
+                        ),
+                        media
+                );
+                var productUpdateResult = productUpdate.updateProduct(storeName, shopifyToken, productUpdateArgsArgs);
+                System.out.println("finished updating media of product: " + ebayItem.title());
+                count++;
             }
-
         }
-        result.forEach((k, v) -> {
-            System.out.println(k + " : " + v);
-        });
-        System.out.println("Number of products with media failures: " + result.size());
-
+        System.out.println("restored media of " + count + " products");
     }
 
     @Transactional
@@ -271,12 +292,18 @@ public class Importer {
         successfullyImportedCount = 0;
         executeImport(dedupResult, ebayToken, shopifyToken, storeName, userId, null);
 
-        activityService.recordActivity(
-                ActivityFlow.EBAY_TO_SHOPIFY,
-                ActivityStatus.SUCCESS,
-                userId,
-                "Imported " + successfullyImportedCount + " products"
-        );
+        try {
+            recordActivityOfImportFromEbayToShopify(userId, dedupResult);
+        } catch(Exception e) {
+            System.out.println("Failed to form record activity string: " + e.getMessage());
+            activityService.recordActivity(
+                    ActivityFlow.EBAY_TO_SHOPIFY,
+                    ActivityStatus.SUCCESS,
+                    userId,
+                    "Imported " + successfullyImportedCount + " products"
+            );
+        }
+
 
         System.out.println("Import complete!" + " " + successfullyImportedCount + " products were imported successfully." + " "
                 + failedItemsReport.size() + " products " +
@@ -285,6 +312,30 @@ public class Importer {
         System.out.println("Failed items report:");
         System.out.println(failedItemsReport.toString());
 
+    }
+
+    private void recordActivityOfImportFromEbayToShopify(String userId, DeduplicationResult dedupResult) {
+        String productString = successfullyImportedCount > 1 ? "products" : "product";
+        StringBuilder description = new StringBuilder("Imported " + successfullyImportedCount + " " + productString + ": ");
+
+        String titleList = Stream.concat(
+                Stream.concat(
+                        dedupResult.identical().keySet().stream(),
+                        dedupResult.editDistOver30().stream()
+                ),
+                dedupResult.editDistUnder30().stream()
+        )
+                .map(GetItemResponse.Item::title)
+                .collect(Collectors.joining(", "));
+
+        description.append(titleList);
+
+        activityService.recordActivity(
+                ActivityFlow.EBAY_TO_SHOPIFY,
+                ActivityStatus.SUCCESS,
+                userId,
+                description.toString()
+        );
     }
 
     public void executeImport(
