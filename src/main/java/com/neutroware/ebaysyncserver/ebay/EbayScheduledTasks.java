@@ -130,7 +130,7 @@ public class EbayScheduledTasks {
         String ebayItemId = transaction.at("/Item/ItemID").asText();
         String transactionId = transaction.at("/TransactionID").asText();
         Integer quantityPurchased = transaction.at("/QuantityPurchased").asInt();
-        String paidTime = transaction.at("/PaidTime").asText();
+        //String paidTime = transaction.at("/PaidTime").asText();
 
         Optional<Product> optionalProduct = productRepository.findByEbayItemId(ebayItemId);
         if(optionalProduct.isPresent()) {
@@ -159,7 +159,7 @@ public class EbayScheduledTasks {
                 EbayTransaction ebayTransaction = new EbayTransaction();
                 ebayTransaction.setEbayTransactionId(transactionId);
                 ebayTransaction.setProduct(product);
-                ebayTransaction.setPaidTime(LocalDateTime.ofInstant(Instant.parse(paidTime), ZoneId.of("UTC")));
+                //ebayTransaction.setPaidTime(LocalDateTime.ofInstant(Instant.parse(paidTime), ZoneId.of("UTC")));
                 product.getEbayTransactions().add(ebayTransaction);
                 productRepository.save(product);
                 activityService.recordActivity(
