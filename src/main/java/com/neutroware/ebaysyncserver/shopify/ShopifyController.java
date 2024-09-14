@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -51,13 +52,17 @@ public class ShopifyController {
     {
         System.out.println("Shopify webhook recieved");
         System.out.println("Domain: " + domain);
-        // Ensure the request is wrapped with ContentCachingRequestWrapper
-        if (!(request instanceof ContentCachingRequestWrapper)) {
-            throw new IllegalStateException("Expected a wrapped request!");
+        String rawBody = "";
+        try (BufferedReader reader = request.getReader()) {
+            // Check if the reader is not null
+            if (reader != null) {
+                // Read all lines and join them
+                rawBody = reader.lines().collect(Collectors.joining("\n"));
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading request body of shopify webhook: " + e.getMessage());
+            throw e;
         }
-        // Cast to ContentCachingRequestWrapper and retrieve the raw body
-        ContentCachingRequestWrapper wrappedRequest = (ContentCachingRequestWrapper) request;
-        String rawBody = new String(wrappedRequest.getContentAsByteArray(), request.getCharacterEncoding());
 
         System.out.println("Order body:");
         System.out.println(rawBody);
