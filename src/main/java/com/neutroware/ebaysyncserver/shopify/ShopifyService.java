@@ -53,6 +53,7 @@ public class ShopifyService {
 
     @Async("singleThreadExecutor")
     public void processOrder(String storeName, Order order) throws Exception {
+        System.out.println("Processing shopify order...");
         UserInfo userInfo = userInfoRepository.findByShopifyStoreName(storeName);
         String ebayToken = ebayService.refreshTokenIfExpired(userInfo.getUserId());
         List<Order.LineItem> lineItems = order.line_items();
@@ -60,20 +61,22 @@ public class ShopifyService {
             String shopifyProductId = "gid://shopify/Product/" + lineItem.product_id();
             Optional<Product> optionalProduct = productRepository.findByShopifyProductId(shopifyProductId);
             if (optionalProduct.isEmpty()) {
+                System.out.println("Product " + shopifyProductId + " does not exist in database (probably a product that is not on ebay)");
                 continue;
             }
             Product product = optionalProduct.get();
             List<ShopifyOrder> previousOrders = product.getShopifyOrders();
             if (hasOrderId(previousOrders, order.admin_graphql_api_id())) {
+                System.out.println("Current order for product " + shopifyProductId + " has already been processed");
                 continue;
             }
             GetItemResponse ebayItem = getItem.getItem(ebayToken, product.getEbayItemId());
             Integer ebayCurrentQuantity = ebayItem.item().quantity() - ebayItem.item().sellingStatus().quantitySold();
             if (ebayCurrentQuantity - lineItem.quantity() > 0) {
-                System.out.println("revise inventoty");
+                System.out.println("Revise inventory on ebay");
                 reviseInventoryStatus.updateQuantity(ebayToken, ebayItem.item().itemId(), ebayCurrentQuantity - lineItem.quantity());
             } else {
-                System.out.println("end listing");
+                System.out.println("End listing on ebay");
                 endItem.endListing(ebayToken, ebayItem.item().itemId());
             }
             product.setShopifyQuantity(product.getShopifyQuantity() - lineItem.quantity());
@@ -91,7 +94,7 @@ public class ShopifyService {
                     "Sold " + lineItem.quantity() + " of product " + product.getTitle()
             );
         }
-        System.out.println("finished processing order");
+        System.out.println("Finished processing order");
     }
 
     public String extractStoreName(String shopDomain) {

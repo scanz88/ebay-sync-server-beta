@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.BufferedReader;
 import java.time.Instant;
@@ -48,12 +49,17 @@ public class ShopifyController {
             HttpServletRequest request
     ) throws Exception
     {
-        System.out.println("shopify webhook recieved");
-        System.out.println("domain: " + domain);
+        System.out.println("Shopify webhook recieved");
+        System.out.println("Domain: " + domain);
+        // Ensure the request is wrapped with ContentCachingRequestWrapper
+        if (!(request instanceof ContentCachingRequestWrapper)) {
+            throw new IllegalStateException("Expected a wrapped request!");
+        }
+        // Cast to ContentCachingRequestWrapper and retrieve the raw body
+        ContentCachingRequestWrapper wrappedRequest = (ContentCachingRequestWrapper) request;
+        String rawBody = new String(wrappedRequest.getContentAsByteArray(), request.getCharacterEncoding());
 
-        //TODO: getting IO exception sometimes which is probably related to BufferedReader (maybe need to close it)
-        String rawBody = new BufferedReader(request.getReader()).lines().collect(Collectors.joining("\n"));
-        System.out.println("order body");
+        System.out.println("Order body:");
         System.out.println(rawBody);
         String storeName = shopifyService.extractStoreName(domain);
         String shopifyWebhookSignature = userInfoRepository.findByShopifyStoreName(storeName).getShopifyWebhookSignature();

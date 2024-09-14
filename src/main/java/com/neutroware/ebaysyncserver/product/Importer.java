@@ -325,6 +325,7 @@ public class Importer {
                 ),
                 dedupResult.editDistUnder30().stream()
         )
+                //TODO: add limit here just to prevent storing too much data in case for some reason it imports a lot of items
                 .map(GetItemResponse.Item::title)
                 .collect(Collectors.joining(", "));
 
