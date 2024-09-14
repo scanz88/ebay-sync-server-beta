@@ -59,7 +59,7 @@ public class ShopifyController {
                 // Read all lines and join them
                 rawBody = reader.lines().collect(Collectors.joining("\n"));
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error reading request body of shopify webhook: " + e.getMessage());
             throw e;
         }
