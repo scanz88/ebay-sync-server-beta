@@ -38,4 +38,8 @@ api.ebay.com:
   certid: ${EBAY_CERT_ID}
   devid: ${EBAY_DEV_ID}
   redirecturi: ${EBAY_REDIRECT_URI}
+shopify:
+  api:
+    version: 2024-07
+  scopes: read_products,write_products,read_locations
 
