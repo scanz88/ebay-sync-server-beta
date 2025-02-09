@@ -12,7 +12,6 @@ import reactor.core.publisher.Mono;
 @Service
 @RequiredArgsConstructor
 public class ProductCreate {
-
     private final GraphQlClientFactory graphQlClientFactory;
     private final ThrottleService throttleService;
 
@@ -21,8 +20,8 @@ public class ProductCreate {
 
         //language=GraphQl
         String mutation = """
-            mutation ($input: ProductInput!, $media: [CreateMediaInput!]) {
-                productCreate(input: $input, media: $media) {
+            mutation ($product: ProductInput!) {
+                productCreate(product: $product) {
                      product {
                           id
                           title
@@ -55,8 +54,7 @@ public class ProductCreate {
             }
             """;
         Mono<ProductCreateResponse> monoResponse = client.document(mutation)
-                .variable("input", args.input())
-                .variable("media", args.media())
+                .variable("product", args.input())
                 .execute()
                 .map((gqlResponse) -> {
                     if (!gqlResponse.isValid()) {
@@ -67,8 +65,6 @@ public class ProductCreate {
                             .toEntity(new ParameterizedTypeReference<ProductCreateResponse>(){});
                 });
 
-        ProductCreateResponse response = monoResponse.block();
-
-        return response;
+        return monoResponse.block();
     }
 }

@@ -1,16 +1,25 @@
 package com.neutroware.ebaysyncserver.shopify.api.mutation.productupdate;
 
-
-import com.neutroware.ebaysyncserver.shopify.api.mutation.productcreate.ProductCreateArgs;
-
-import java.util.List;
-
 public record ProductUpdateArgs(
-        ProductInput input,
-        List<ProductCreateArgs.Media> media
+        ProductInput product  // Changed from 'input' to 'product'
 ) {
     public record ProductInput(
             String id,
-            List<String> tags
+            List<String> tags,
+            String title,          // Added common product fields
+            String description,
+            String vendor,
+            String productType,
+            Boolean published,
+            List<VariantInput> variants
+    ) {}
+
+    public record VariantInput(
+            String id,
+            String sku,
+            String price,
+            String compareAtPrice,
+            Integer inventoryQuantity,
+            String inventoryPolicy
     ) {}
 }

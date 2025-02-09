@@ -1,9 +1,12 @@
 package com.neutroware.ebaysyncserver.shopify.api.mutation.productvariantupdate;
 
+import java.util.List;
+
 public record ProductVariantUpdateResponse(
-        ProductVariant productVariant
+    List<UserError> userErrors
 ) {
-    public record ProductVariant(
-            String id
+    public record UserError(
+        String field,
+        String message
     ) {}
 }

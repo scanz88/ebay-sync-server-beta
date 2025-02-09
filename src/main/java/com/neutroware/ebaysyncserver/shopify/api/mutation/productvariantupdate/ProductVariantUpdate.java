@@ -18,29 +18,31 @@ public class ProductVariantUpdate {
 
         //language=GraphQl
         String mutation = """
-            mutation ($input: ProductVariantInput!) {
-                productVariantUpdate(input: $input) {
-                    productVariant {
+            mutation ($variants: [ProductVariantsBulkInput!]!) {
+                productVariantsBulkUpdate(variants: $variants) {
+                    productVariants {
                         id
                     }
-                    
+                    userErrors {
+                        field
+                        message
+                    }
                 }
             }
         """;
 
         Mono<ProductVariantUpdateResponse> monoResponse = client.document(mutation)
-                .variable("input", args.input())
+                .variable("variants", List.of(args.input()))
                 .execute()
                 .map(gqlResponse -> {
                     if (!gqlResponse.isValid()) {
                         throw new RuntimeException("productvariantupdate error: " + gqlResponse.toString());
                     }
                     throttleService.throttle(gqlResponse.getExtensions());
-                    return gqlResponse.field("productVariantUpdate")
+                    return gqlResponse.field("productVariantsBulkUpdate")
                             .toEntity(ProductVariantUpdateResponse.class);
                 });
 
-        ProductVariantUpdateResponse response = monoResponse.block();
-        return response;
+        return monoResponse.block();
     }
 }

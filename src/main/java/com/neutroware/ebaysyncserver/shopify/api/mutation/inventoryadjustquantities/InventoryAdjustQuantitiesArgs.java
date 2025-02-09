@@ -3,17 +3,12 @@ package com.neutroware.ebaysyncserver.shopify.api.mutation.inventoryadjustquanti
 import java.util.List;
 
 public record InventoryAdjustQuantitiesArgs(
-        InventoryAdjustQuantitiesInput input
+        List<InventoryAdjustQuantityInput> quantities
 ) {
-    public record InventoryAdjustQuantitiesInput(
-            String name,
-            String reason,
-            List<Change> changes
-    ) {}
-
-    public record Change(
-            Integer delta,
+    public record InventoryAdjustQuantityInput(
+            Integer availableDelta,
             String inventoryItemId,
-            String locationId
+            String locationId,
+            String reason
     ) {}
 }

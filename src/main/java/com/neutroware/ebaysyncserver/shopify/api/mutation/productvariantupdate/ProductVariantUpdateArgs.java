@@ -1,11 +1,14 @@
 package com.neutroware.ebaysyncserver.shopify.api.mutation.productvariantupdate;
 
 public record ProductVariantUpdateArgs(
-        ProductVariantInput input
+        ProductVariantsBulkInput input
 ) {
-   public record ProductVariantInput(
+   public record ProductVariantsBulkInput(
            String id,
            String price,
+           String sku,
+           String inventoryQuantity,
+           String inventoryPolicy,
            InventoryItem inventoryItem
    ) {}
 

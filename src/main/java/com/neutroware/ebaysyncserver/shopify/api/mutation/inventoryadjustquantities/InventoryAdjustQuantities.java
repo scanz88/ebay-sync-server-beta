@@ -18,8 +18,12 @@ public class InventoryAdjustQuantities {
 
         //language=GraphQl
         String mutation = """
-            mutation ($input: InventoryAdjustQuantitiesInput!) {
-                inventoryAdjustQuantities(input: $input) {
+            mutation ($quantities: [InventoryAdjustQuantityInput!]!) {
+                inventoryBulkAdjustQuantityAtLocation(inventoryItemAdjustments: $quantities) {
+                    inventoryLevels {
+                        id
+                        available
+                    }
                     userErrors {
                         field
                         message
@@ -29,18 +33,16 @@ public class InventoryAdjustQuantities {
         """;
 
         Mono<InventoryAdjustQuantitiesResponse> monoResponse = client.document(mutation)
-                .variable("input", args.input())
+                .variable("quantities", args.input().changes())  // Need to use changes from input
                 .execute()
                 .map(gqlResponse -> {
                     if (!gqlResponse.isValid()) {
                         throw new RuntimeException("inventoryadjustquantities error: " + gqlResponse.toString());
                     }
                     throttleService.throttle(gqlResponse.getExtensions());
-                    return gqlResponse.field("inventoryAdjustQuantities").toEntity(InventoryAdjustQuantitiesResponse.class);
+                    return gqlResponse.field("inventoryBulkAdjustQuantityAtLocation").toEntity(InventoryAdjustQuantitiesResponse.class);
                 });
 
-        InventoryAdjustQuantitiesResponse response = monoResponse.block();
-
-        return response;
+        return monoResponse.block();
     }
 }
